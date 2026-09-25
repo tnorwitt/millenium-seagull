@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mission 2: The Cargo Run — Newton's 2nd Law</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:#0a0500; font-family:'Courier New',monospace; color:#fcd34d; overflow:hidden; display:flex; flex-direction:column; }
+#topbar { background:#140800; border-bottom:2px solid #d97706; padding:8px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+#title { font-size:20px; color:#fbbf24; letter-spacing:3px; font-weight:bold; text-shadow:0 0 10px #fbbf2466; }
+#lawbox { flex:1; text-align:center; }
+.lbl { font-size:19px; color:#d97706; letter-spacing:2px; text-transform:uppercase; }
+.law { font-size:19px; color:#fef3c7; font-style:italic; }
+#hud { display:flex; gap:20px; align-items:center; }
+.hitem { text-align:center; }
+.hl { font-size:16px; color:#92400e; letter-spacing:1px; display:block; }
+.hv { font-size:18px; color:#fbbf24; font-weight:bold; display:block; }
+
+#gamearea { flex:1; display:flex; overflow:hidden; position:relative; }
+canvas { display:block; flex:1; }
+
+#sidebar { width:220px; background:#0d0600; border-left:2px solid #92400e; padding:16px; display:flex; flex-direction:column; gap:12px; justify-content:center; flex-shrink:0; }
+.stitle { font-size:19px; color:#d97706; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+.sbox { background:#140800; border:1px solid #292000; border-radius:6px; padding:12px; }
+.srow { display:flex; justify-content:space-between; font-size:19px; padding:5px 0; border-bottom:1px solid #1e1200; }
+.srow:last-child { border-bottom:none; }
+.sl { color:#92400e; }
+.sv { color:#fbbf24; font-weight:bold; font-size:19px; }
+.sv.dim { color:#3a2000; }
+.sv.good { color:#4ade80; }
+.ctrl-row { display:flex; align-items:center; gap:8px; font-size:16px; color:#fcd34d; margin-bottom:6px; }
+kbd { background:#1e1200; border:1px solid #d97706; border-radius:4px; padding:2px 7px; font-size:18px; color:#fbbf24; }
+#resetbtn { padding:10px; font-size:16px; border:1px solid #92400e; background:#0d0600; color:#d97706; border-radius:5px; cursor:pointer; font-family:'Courier New',monospace; }
+#resetbtn:hover { color:#fbbf24; border-color:#d97706; }
+
+#msgbar { flex-shrink:0; background:#0d0600; border-top:2px solid #92400e; padding:8px 20px; font-size:19px; color:#fbbf24; text-align:center; min-height:38px; }
+
+/* BRIEFING */
+#briefing { display:flex; position:absolute; top:0; left:0; right:220px; bottom:0; background:rgba(10,5,0,0.96); flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:10; padding:40px; }
+#briefing.hidden { display:none; }
+#briefing .hole-tag { font-size:16px; color:#d97706; letter-spacing:4px; text-transform:uppercase; }
+#briefing .hole-title { font-size:32px; color:#fbbf24; letter-spacing:3px; font-weight:bold; text-shadow:0 0 16px #fbbf2466; text-align:center; }
+#briefing .law-card { background:#140800; border:2px solid #d97706; border-radius:10px; padding:16px 24px; max-width:540px; width:100%; text-align:center; }
+#briefing .law-card .lt { font-size:18px; color:#d97706; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+#briefing .law-card .lb { font-size:19px; color:#fef3c7; line-height:1.8; }
+#briefing .law-card .lb b { color:#fbbf24; }
+#briefing .cargo-box { background:#1e1200; border:2px solid #d97706; border-radius:8px; padding:12px 20px; max-width:540px; width:100%; text-align:center; font-size:16px; color:#fcd34d; line-height:1.7; }
+#briefing .mission-note { font-size:18px; color:#b45309; max-width:520px; text-align:center; line-height:1.7; }
+#briefing .launch-btn { padding:14px 40px; font-size:18px; font-weight:bold; border:2px solid #4ade80; background:#022010; color:#4ade80; border-radius:8px; cursor:pointer; font-family:'Courier New',monospace; letter-spacing:2px; }
+#briefing .launch-btn:hover { background:#033018; }
+
+/* TUTORIAL */
+#tutorial { display:flex; position:absolute; top:0; left:0; right:220px; bottom:0; background:rgba(10,5,0,0.97); flex-direction:column; align-items:center; justify-content:center; gap:18px; z-index:20; padding:40px; }
+#tutorial.hidden { display:none; }
+#tutorial h2 { font-size:28px; color:#fbbf24; letter-spacing:3px; font-weight:bold; }
+#tutorial .tcard { background:#140800; border:2px solid #d97706; border-radius:10px; padding:16px 24px; max-width:560px; width:100%; }
+#tutorial .tcard .tc-title { font-size:19px; color:#d97706; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+#tutorial .ctrl-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#tutorial .ctrl-item { display:flex; align-items:center; gap:10px; font-size:19px; color:#fef3c7; }
+#tutorial .ctrl-item .key { background:#1e1200; border:2px solid #d97706; border-radius:4px; padding:4px 10px; font-size:16px; color:#fbbf24; font-weight:bold; white-space:nowrap; min-width:60px; text-align:center; }
+#tutorial .tlaunch { padding:14px 40px; font-size:18px; font-weight:bold; border:2px solid #4ade80; background:#022010; color:#4ade80; border-radius:8px; cursor:pointer; font-family:'Courier New',monospace; letter-spacing:2px; }
+#tutorial .tlaunch:hover { background:#033018; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="title">📦 THE CARGO RUN</div>
+  <div id="lawbox">
+    <div class="lbl">Newton's Second Law — F = ma</div>
+    <div class="law">"More mass = less acceleration. Same force, heavier cargo = harder to maneuver."</div>
+  </div>
+  <div id="hud">
+    <div class="hitem"><span class="hl">LEVEL</span><span class="hv" id="lvl-disp">1/4</span></div>
+    <div class="hitem"><span class="hl">FUEL</span><span class="hv" id="fuel-disp">130</span></div>
+    <div class="hitem"><span class="hl">SPEED</span><span class="hv" id="spd-disp">0.0</span></div>
+    <div class="hitem"><span class="hl">DOCKED</span><span class="hv" id="score-disp">0/3</span></div>
+    <div class="hitem"><span class="hl">TIME</span><span class="hv" id="time-disp">0.0s</span></div>
+  </div>
+</div>
+
+<div id="gamearea">
+  <canvas id="c"></canvas>
+
+  <div id="tutorial">
+    <h2>📦 HOW TO FLY</h2>
+    <div class="tcard">
+      <div class="tc-title">Controls</div>
+      <div class="ctrl-grid">
+        <div class="ctrl-item"><span class="key">← →</span> Rotate ship</div>
+        <div class="ctrl-item"><span class="key">↑</span> Fire thrusters</div>
+        <div class="ctrl-item"><span class="key">↺ Reset</span> Restart level</div>
+        <div class="ctrl-item"><span class="key">Goal</span> Dock with stations</div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tc-title">Newton's 2nd Law — F = ma</div>
+      <div style="font-size:18px;color:#fef3c7;line-height:1.8;">
+        Each level your ship carries a <b style="color:#fbbf24;">different mass cargo pod.</b><br><br>
+        The Seagull's engines always produce the <b style="color:#fbbf24;">same force.</b><br><br>
+        But <b style="color:#fbbf24;">a = F ÷ m</b> — heavier cargo means <b style="color:#fbbf24;">less acceleration.</b><br>
+        You'll feel the difference immediately.
+      </div>
+    </div>
+    <div style="font-size:19px;color:#92400e;text-align:center;">Dock with all 3 stations to complete each level. Watch how the ship handles differently as cargo mass increases!</div>
+    <button class="tlaunch" onclick="closeTutorial()">GOT IT — BEGIN MISSION →</button>
+  </div>
+
+  <div id="briefing">
+    <div class="hole-tag" id="br-tag">LEVEL 1 OF 4</div>
+    <div class="hole-title" id="br-title">HOMEWORK HAUL</div>
+    <canvas id="shippreview" width="280" height="80"></canvas>
+    <div class="law-card">
+      <div class="lt">Physics Briefing</div>
+      <div class="lb" id="br-law"></div>
+    </div>
+    <div class="cargo-box" id="br-cargo"></div>
+    <div class="mission-note" id="br-note"></div>
+    <button class="launch-btn" onclick="startLevel()">ENGAGE ENGINES →</button>
+  </div>
+
+  <div id="sidebar">
+    <div class="sbox">
+      <div class="stitle">🚀 Ship Status</div>
+      <div class="srow"><span class="sl">Cargo Mass</span><span class="sv" id="s-mass">10 kg</span></div>
+      <div class="srow"><span class="sl">Fuel</span><span class="sv" id="s-fuel">130</span></div>
+      <div class="srow"><span class="sl">Speed</span><span class="sv dim" id="s-speed">0.0 m/s</span></div>
+      <div class="srow"><span class="sl">Docked</span><span class="sv" id="s-docked">0 / 3</span></div>
+    </div>
+    <div class="sbox">
+      <div class="stitle">⚡ F = ma Live</div>
+      <div class="srow"><span class="sl">Thrust F</span><span class="sv" id="s-force">100 N</span></div>
+      <div class="srow"><span class="sl">Total mass</span><span class="sv" id="s-totmass">—</span></div>
+      <div class="srow"><span class="sl">Max accel</span><span class="sv" id="s-accel">—</span></div>
+    </div>
+    <div class="sbox">
+      <div class="stitle">🎮 Controls</div>
+      <div class="ctrl-row"><kbd>← →</kbd> Rotate</div>
+      <div class="ctrl-row"><kbd>↑</kbd> Thrust</div>
+          </div>
+    <button id="resetbtn" onclick="resetLevel()">↺ RESET LEVEL</button>
+  </div>
+</div>
+
+<div id="msgbar">Loading...</div>
+
+<script>
+var c=document.getElementById('c'), ctx=c.getContext('2d');
+var W,H,animId,frame=0;
+var ship,stations,asteroids,particles=[],keys={},fuel,docked,dead,won,running=false,lvlIdx=0;
+var levelStartTime=0,levelTime=0,totalTime=0,levelTimes=[],timerActive=false;
+
+const SHIP_MASS = 20; // ship always weighs 20kg
+const THRUST_FORCE = 100; // N — constant
+
+var LEVELS = [
+  { id:'1/4', title:'HOMEWORK HAUL',
+    cargo:'📚 CARGO: 10 kg of homework',
+    emoji:'📚',
+    cargoMass:10,
+    lawText:'Total mass: <b>30 kg</b> → a = 100 ÷ 30 = <b>3.33 m/s²</b><br>Light and snappy. Enjoy it.',
+    note:'Light cargo. Get a feel for the controls. Rotate to aim, thrust to move.',
+    stFrac:[{x:0.88,y:0.18},{x:0.85,y:0.82},{x:0.52,y:0.50}],
+    astFrac:[], svx:0.04, svy:0.02, fuel:130 },
+  { id:'2/4', title:'MYSTERY MEAT DELIVERY',
+    cargo:'🍖 CARGO: 40 kg of cafeteria mystery meat',
+    emoji:'🍖',
+    cargoMass:40,
+    lawText:'Total mass: <b>60 kg</b> → a = 100 ÷ 60 = <b>1.67 m/s²</b><br>Half the acceleration. You\'ll feel it.',
+    note:'Same engines as level 1. But that mystery meat makes it twice as hard to maneuver.',
+    stFrac:[{x:0.88,y:0.20},{x:0.82,y:0.80},{x:0.24,y:0.78}],
+    astFrac:[{x:0.45,y:0.42,r:0.048},{x:0.62,y:0.63,r:0.038}],
+    svx:0.05, svy:-0.03, fuel:115 },
+  { id:'3/4', title:'THE TRASH HAUL',
+    cargo:'🗑️ CARGO: 80 kg of Mr. Norwitt\'s classroom trash after building rockets',
+    emoji:'🗑️',
+    cargoMass:80,
+    lawText:'Total mass: <b>100 kg</b> → a = 100 ÷ 100 = <b>1.00 m/s²</b><br>One third of level 1. Plan way ahead.',
+    note:'Rocket debris, empty bottles, hot glue strings. It adds up. Dense asteroid field — very sluggish handling.',
+    stFrac:[{x:0.88,y:0.13},{x:0.87,y:0.87},{x:0.13,y:0.86}],
+    astFrac:[{x:0.38,y:0.33,r:0.052},{x:0.58,y:0.49,r:0.04},{x:0.28,y:0.53,r:0.032},{x:0.67,y:0.72,r:0.038}],
+    svx:0.06, svy:0.03, fuel:95 },
+  { id:'4/4', title:'PIZZA DELIVERY (CRITICAL)',
+    cargo:'🍕 CARGO: 150 kg of pizzas',
+    emoji:'🍕',
+    cargoMass:150,
+    lawText:'Total mass: <b>170 kg</b> → a = 100 ÷ 170 = <b>0.59 m/s²</b><br>Barely moves. But pizza waits for no one.',
+    note:'170kg of pizza. Every thrust barely registers. Most important delivery in history. Do not drop.',
+    stFrac:[{x:0.88,y:0.17},{x:0.88,y:0.85},{x:0.22,y:0.50}],
+    astFrac:[{x:0.35,y:0.29,r:0.05},{x:0.51,y:0.48,r:0.038},{x:0.67,y:0.35,r:0.032},{x:0.43,y:0.73,r:0.042},{x:0.62,y:0.79,r:0.036},{x:0.25,y:0.73,r:0.03}],
+    svx:0.07, svy:-0.03, fuel:80 },
+];
+
+LEVELS.forEach(function(L){ (L.astFrac||[]).forEach(function(a){ a.seed=Math.random()*10; a.rot=Math.random()*6.28; }); });
+
+var STARS=[];
+function makeStars(){
+  STARS=[];
+  for(var i=0;i<180;i++) STARS.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.2,a:Math.random()*0.55+0.2,tw:Math.random()*6.28});
+}
+
+function sz(){
+  var ga=document.getElementById('gamearea');
+  var sb=document.getElementById('sidebar');
+  W=ga.clientWidth-sb.offsetWidth; H=ga.clientHeight;
+  c.width=W; c.height=H;
+  makeStars();
+}
+
+function getL(){ return LEVELS[lvlIdx]; }
+function getTotalMass(){ return SHIP_MASS + getL().cargoMass; }
+function getAccel(){ return (THRUST_FORCE / getTotalMass()); }
+
+function showBriefing(){
+  var L=getL();
+  document.getElementById('br-tag').textContent='LEVEL '+L.id;
+  document.getElementById('br-title').textContent=L.title;
+  document.getElementById('br-law').innerHTML=L.lawText;
+  document.getElementById('br-cargo').textContent=L.cargo;
+  document.getElementById('br-note').textContent=L.note;
+  document.getElementById('briefing').classList.remove('hidden');
+  drawShipPreview(L);
+}
+
+function drawShipPreview(L){
+  var pc=document.getElementById('shippreview');
+  var pctx=pc.getContext('2d');
+  pctx.clearRect(0,0,280,80);
+  pctx.fillStyle='#0a0500'; pctx.fillRect(0,0,280,80);
+  for(var i=0;i<30;i++){
+    pctx.globalAlpha=Math.random()*0.4+0.1;
+    pctx.fillStyle='#fef3c7'; pctx.beginPath(); pctx.arc(Math.random()*280,Math.random()*80,Math.random()*1+0.3,0,6.28); pctx.fill();
+  }
+  pctx.globalAlpha=1;
+  // Ship
+  pctx.save(); pctx.translate(80,40);
+  pctx.shadowColor='#fbbf24'; pctx.shadowBlur=10;
+  pctx.fillStyle='#1e1200'; pctx.strokeStyle='#fbbf24'; pctx.lineWidth=2;
+  pctx.beginPath(); pctx.moveTo(20,0); pctx.lineTo(-12,-11); pctx.lineTo(-7,-4); pctx.lineTo(-7,4); pctx.lineTo(-12,11); pctx.closePath(); pctx.fill(); pctx.stroke();
+  pctx.fillStyle='#d97706'; pctx.beginPath(); pctx.ellipse(3,0,6,4,0,0,6.28); pctx.fill();
+  pctx.strokeStyle='#d97706'; pctx.lineWidth=1.5;
+  pctx.beginPath(); pctx.moveTo(-12,-11); pctx.lineTo(-18,-15); pctx.lineTo(-14,-5); pctx.stroke();
+  pctx.beginPath(); pctx.moveTo(-12,11); pctx.lineTo(-18,15); pctx.lineTo(-14,5); pctx.stroke();
+  // Cargo pod behind ship
+  var podScale = 0.5 + L.cargoMass/200;
+  pctx.shadowColor='#d97706'; pctx.shadowBlur=8;
+  pctx.fillStyle='#1e1200'; pctx.strokeStyle='#d97706'; pctx.lineWidth=1.5;
+  pctx.beginPath(); pctx.rect(-12-podScale*30,-podScale*14,podScale*30,podScale*28); pctx.fill(); pctx.stroke();
+  pctx.shadowBlur=0;
+  pctx.font='bold 12px monospace'; pctx.textAlign='center'; pctx.fillStyle='#fbbf24';
+  pctx.fillText(L.emoji+' '+L.cargoMass+'kg',-12-podScale*15,5);
+  pctx.restore();
+  pctx.font='bold 12px monospace'; pctx.textAlign='center'; pctx.fillStyle='#fbbf24';
+  pctx.fillText('MILLENNIUM SEAGULL + CARGO',140,68);
+}
+
+function closeTutorial(){
+  document.getElementById('tutorial').classList.add('hidden');
+  showBriefing();
+}
+
+function startLevel(){
+  document.getElementById('briefing').classList.add('hidden');
+  running=true; resetLevel();
+}
+
+function resetLevel(){
+  var L=getL();
+  ship={x:W*0.08,y:H/2,vx:L.svx,vy:L.svy,angle:-0.2,thrusting:false,dead:false};
+  stations=L.stFrac.map(function(s){ return {x:s.x*W,y:s.y*H,r:26,docked:false}; });
+  asteroids=(L.astFrac||[]).map(function(a){ return {x:a.x*W,y:a.y*H,r:a.r*Math.min(W,H),seed:a.seed,rot:a.rot}; });
+  particles=[]; keys={};
+  fuel=L.fuel; docked=0; dead=false; won=false;
+  levelStartTime=performance.now(); timerActive=true; levelTime=0;
+  updateSidebar();
+  document.getElementById('lvl-disp').textContent=L.id;
+  document.getElementById('time-disp').textContent='0.0s';
+  document.getElementById('score-disp').textContent='0/3';
+  setMsg('LEVEL '+L.id+': '+L.title+' — '+L.cargo+' — Dock with all 3 stations!');
+  if(animId) cancelAnimationFrame(animId);
+  if(running) loop();
+}
+
+function updateSidebar(){
+  var L=getL();
+  var tm=getTotalMass(), ac=getAccel();
+  document.getElementById('s-mass').textContent=L.cargoMass+' kg';
+  document.getElementById('s-fuel').textContent=Math.round(fuel);
+  document.getElementById('s-force').textContent=THRUST_FORCE+' N';
+  document.getElementById('s-totmass').textContent=tm+' kg';
+  document.getElementById('s-accel').textContent=ac.toFixed(2)+' m/s²';
+  var spd=ship?Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy):0;
+  document.getElementById('s-speed').textContent=spd.toFixed(1)+' m/s';
+  document.getElementById('s-speed').className='sv'+(spd>0.3?'':' dim');
+  document.getElementById('s-docked').textContent=docked+' / 3';
+  document.getElementById('fuel-disp').textContent=Math.round(fuel);
+  var td=document.getElementById('time-disp'); if(td) td.textContent=(levelTime%60).toFixed(1)+'s';
+  document.getElementById('spd-disp').textContent=spd.toFixed(1);
+}
+
+function setMsg(t){ document.getElementById('msgbar').textContent=t; }
+
+const ROT=0.054, FUEL_R=0.48, SR=13, DOCK=38;
+
+function drawBg(){
+  // Warm space — orange/amber nebula
+  ctx.fillStyle='#080400'; ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=0.06;
+  ctx.fillStyle='#7c2d12'; ctx.beginPath(); ctx.ellipse(W*.75,H*.22,W*.22,H*.3,0.3,0,6.28); ctx.fill();
+  ctx.fillStyle='#78350f'; ctx.beginPath(); ctx.ellipse(W*.18,H*.78,W*.15,H*.22,-0.4,0,6.28); ctx.fill();
+  ctx.globalAlpha=1;
+  STARS.forEach(function(s){
+    ctx.globalAlpha=s.a*(0.85+0.15*Math.sin(s.tw+frame*0.018));
+    ctx.fillStyle='#fef3c7'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.28); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+
+function drawAsteroid(a){
+  ctx.save(); ctx.translate(a.x,a.y); ctx.rotate(a.rot+frame*0.003);
+  ctx.fillStyle='#2d1800'; ctx.strokeStyle='#78350f'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for(var i=0;i<9;i++){
+    var ang=i/9*6.28+a.seed, r=a.r*(0.8+0.2*Math.sin(i*2.7+a.seed));
+    if(i===0) ctx.moveTo(Math.cos(ang)*r,Math.sin(ang)*r);
+    else ctx.lineTo(Math.cos(ang)*r,Math.sin(ang)*r);
+  }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#3d2000';
+  ctx.beginPath(); ctx.ellipse(-a.r*.22,-a.r*.18,a.r*.28,a.r*.18,0.5,0,6.28); ctx.fill();
+  ctx.restore();
+}
+
+function drawStation(s){
+  ctx.save(); ctx.translate(s.x,s.y);
+  if(!s.docked){
+    ctx.globalAlpha=0.25+0.15*Math.sin(frame*0.06);
+    ctx.strokeStyle='#d97706'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(0,0,s.r+18,0,6.28); ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  ctx.rotate(frame*0.009);
+  ctx.strokeStyle=s.docked?'#4ade80':'#d97706'; ctx.lineWidth=2;
+  ctx.fillStyle=s.docked?'#0a2014':'#140800';
+  ctx.shadowColor=s.docked?'#4ade80':'#d97706'; ctx.shadowBlur=s.docked?14:7;
+  ctx.beginPath(); ctx.arc(0,0,s.r,0,6.28); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=s.docked?'#0a2014':'#140800'; ctx.strokeStyle=s.docked?'#4ade80':'#d97706';
+  ctx.fillRect(-s.r,-4,s.r*2,8); ctx.strokeRect(-s.r,-4,s.r*2,8);
+  ctx.fillRect(-4,-s.r,8,s.r*2); ctx.strokeRect(-4,-s.r,8,s.r*2);
+  ctx.shadowBlur=0;
+  ctx.font='bold 12px monospace'; ctx.textAlign='center';
+  ctx.fillStyle=s.docked?'#4ade80':'#d97706';
+  ctx.fillText(s.docked?'DOCKED':'DOCK',0,s.r+18);
+  ctx.restore();
+}
+
+function drawShip(){
+  if(!ship||ship.dead) return;
+  ctx.save(); ctx.translate(ship.x,ship.y); ctx.rotate(ship.angle);
+  // Cargo pod first (behind ship)
+  var L=getL();
+  var podW=20+L.cargoMass*0.3, podH=12+L.cargoMass*0.08;
+  ctx.fillStyle='#1e1200'; ctx.strokeStyle='#d97706'; ctx.lineWidth=1.5;
+  ctx.shadowColor='#d97706'; ctx.shadowBlur=6;
+  ctx.fillRect(-podW-18,-podH/2,podW,podH);
+  ctx.strokeRect(-podW-18,-podH/2,podW,podH);
+  // Tow cable
+  ctx.strokeStyle='#92400e'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(-18,0); ctx.stroke();
+  // Cargo emoji label
+  ctx.shadowBlur=0;
+  ctx.font='bold '+(Math.min(16,10+L.cargoMass*0.06))+'px monospace';
+  ctx.textAlign='center'; ctx.fillStyle='#fbbf24';
+  ctx.fillText(L.emoji,-18-podW/2,4);
+  // Ship hull
+  ctx.shadowColor='#fbbf24'; ctx.shadowBlur=ship.thrusting?16:6;
+  ctx.fillStyle='#1e1200'; ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(20,0); ctx.lineTo(-12,-11); ctx.lineTo(-7,-4); ctx.lineTo(-7,4); ctx.lineTo(-12,11);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#d97706'; ctx.beginPath(); ctx.ellipse(3,0,6,4,0,0,6.28); ctx.fill();
+  ctx.strokeStyle='#d97706'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-12,-11); ctx.lineTo(-18,-16); ctx.lineTo(-14,-5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-12,11); ctx.lineTo(-18,16); ctx.lineTo(-14,5); ctx.stroke();
+  if(ship.thrusting){
+    var fl=12+Math.random()*10;
+    ctx.globalAlpha=0.88+Math.random()*0.12; ctx.fillStyle='#fb923c';
+    ctx.beginPath(); ctx.moveTo(-7,-4); ctx.lineTo(-7-fl,0); ctx.lineTo(-7,4); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1;
+    for(var i=0;i<2;i++) particles.push({x:ship.x+Math.cos(ship.angle+Math.PI)*18,y:ship.y+Math.sin(ship.angle+Math.PI)*18,vx:Math.cos(ship.angle+Math.PI)*2+(Math.random()-.5),vy:Math.sin(ship.angle+Math.PI)*2+(Math.random()-.5),life:16,c:'#fb923c'});
+  }
+
+  ctx.shadowBlur=0; ctx.restore();
+  // F=ma label under ship
+  ctx.font='12px monospace'; ctx.textAlign='center'; ctx.fillStyle='#92400e';
+  ctx.fillText('F='+THRUST_FORCE+'N ÷ m='+getTotalMass()+'kg = a='+getAccel().toFixed(2)+'m/s²',ship.x,ship.y+32);
+}
+
+function drawTimer(){
+  var mins=Math.floor(levelTime/60), secs=(levelTime%60).toFixed(1);
+  var timeStr='⏱ '+( mins>0?mins+'m '+secs+'s':secs+'s');
+  ctx.font='bold 18px monospace'; ctx.textAlign='left';
+  ctx.fillStyle='#fbbf24'; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=6;
+  ctx.fillText(timeStr, 14, 28);
+  ctx.shadowBlur=0;
+  // Total time
+  if(lvlIdx>0){
+    var ts=Math.floor(totalTime/60), tss=(totalTime%60).toFixed(1);
+    var totStr='Total: '+(ts>0?ts+'m '+tss+'s':tss+'s');
+    ctx.font='14px monospace'; ctx.fillStyle='#d97706';
+    ctx.fillText(totStr, 14, 50);
+  }
+}
+
+function loop(){
+  frame++;
+  if(timerActive) levelTime=(performance.now()-levelStartTime)/1000;
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+  asteroids.forEach(drawAsteroid);
+  stations.forEach(drawStation);
+
+  if(!dead&&!won){
+    if(keys['ArrowLeft']) ship.angle-=ROT;
+    if(keys['ArrowRight']) ship.angle+=ROT;
+    var thr=false;
+    var THR=0.06/getTotalMass()*SHIP_MASS; // fixed base, divided by total mass so heavier = sluggish
+    if(keys['ArrowUp']&&fuel>0){ ship.vx+=Math.cos(ship.angle)*THR; ship.vy+=Math.sin(ship.angle)*THR; fuel-=FUEL_R; thr=true; }
+        fuel=Math.max(0,fuel);
+    ship.thrusting=thr;
+    ship.x+=ship.vx; ship.y+=ship.vy;
+    if(ship.x<SR){ship.x=SR;ship.vx*=-0.4;} if(ship.x>W-SR){ship.x=W-SR;ship.vx*=-0.4;}
+    if(ship.y<SR){ship.y=SR;ship.vy*=-0.4;} if(ship.y>H-SR){ship.y=H-SR;ship.vy*=-0.4;}
+
+    for(var i=0;i<asteroids.length;i++){
+      var a=asteroids[i],dx=ship.x-a.x,dy=ship.y-a.y;
+      if(Math.sqrt(dx*dx+dy*dy)<a.r+SR-2){
+        dead=true; ship.dead=true;
+        for(var j=0;j<24;j++) particles.push({x:ship.x,y:ship.y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,life:50,c:'#fb923c'});
+        setMsg('CRASH! The Seagull (and the '+getL().emoji+') hit an asteroid. Newton\'s 1st Law: you kept moving until the force of impact stopped you. Reset and try again!');
+        break;
+      }
+    }
+
+    if(!dead){
+      stations.forEach(function(s){
+        if(!s.docked){
+          var dx=ship.x-s.x, dy=ship.y-s.y;
+          var dist=Math.sqrt(dx*dx+dy*dy);
+          var spd=Math.sqrt(ship.vx*ship.vx+ship.vy*ship.vy);
+          if(dist < s.r+DOCK){
+            if(spd > 1.2){
+              // Too fast — bounce off
+              var nx=dx/dist, ny=dy/dist;
+              ship.vx=nx*spd*0.6; ship.vy=ny*spd*0.6;
+              setMsg('TOO FAST! '+spd.toFixed(1)+' m/s — need below 1.2. Rotate 180° and thrust to slow down!');
+            } else {
+              // Slow enough — dock!
+              s.docked=true; docked++;
+              for(var i=0;i<20;i++) particles.push({x:s.x,y:s.y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,life:36,c:'#4ade80'});
+              document.getElementById('s-docked').textContent=docked+' / 3';
+              document.getElementById('score-disp').textContent=docked+'/3';
+              if(docked>=3){
+                won=true;
+                var isLast=lvlIdx>=LEVELS.length-1;
+                if(isLast){
+                  setMsg('ALL LEVELS COMPLETE! 🍕 Pizza delivered! Did you feel the difference? 10kg vs 150kg — same engines, totally different handling. That\'s F = ma!');
+                  setTimeout(function(){
+                    var br=document.getElementById('briefing');
+                    var mins=Math.floor(totalTime/60), secs=(totalTime%60).toFixed(2);
+var timeStr=mins>0?mins+'m '+secs+'s':secs+'s';
+br.innerHTML='<div class="hole-tag">MISSION 2 COMPLETE</div><div class="hole-title" style="font-size:26px;">NEWTON\'S 2ND LAW — MASTERED</div><div class="law-card"><div class="lt">What you felt</div><div class="lb">The Seagull\'s engines always produced <b>100 N of force.</b><br>But as cargo mass increased, <b>a = F ÷ m</b> got smaller.<br>10kg cargo: snappy. 150kg of tests: barely moved.<br><b>Same force. More mass. Less acceleration. Always.</b></div></div><div class="cargo-box">⏱ YOUR TIME: '+timeStr+'</div><div class="mission-note">Write down your time — fastest pilot in the class wins!</div>';
+                    br.classList.remove('hidden');
+                  },2000);
+                } else {
+                  setMsg('Level '+getL().id+' delivered! Next up: heavier cargo, same engines. Feel that F = ma!');
+                  setTimeout(function(){ lvlIdx++; showBriefing(); },2200);
+                }
+              } else {
+                setMsg('Docked! '+(3-docked)+' remaining. Remember to slow down before approaching next station!');
+              }
+            }
+          }
+        }
+      });
+    }
+    if(fuel<=0&&!dead&&!won) setMsg("Out of fuel! The "+getL().emoji+" cargo drifts forever. Newton's 1st Law: no force = no change in motion.");
+  }
+
+  particles=particles.filter(function(p){return p.life>0;});
+  particles.forEach(function(p){
+    ctx.globalAlpha=p.life/50;
+    ctx.fillStyle=p.c; ctx.shadowColor=p.c; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.arc(p.x,p.y,3,0,6.28); ctx.fill();
+    ctx.shadowBlur=0; p.x+=p.vx; p.y+=p.vy; p.life--;
+  });
+  ctx.globalAlpha=1;
+  drawShip();
+  drawTimer();
+  updateSidebar();
+  animId=requestAnimationFrame(loop);
+}
+
+document.addEventListener('keydown',function(e){ keys[e.key]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); });
+document.addEventListener('keyup',function(e){ keys[e.key]=false; });
+
+window.onload=function(){ sz(); loop(); };
+window.onresize=function(){ sz(); };
+</script>
+</body>
+</html>
